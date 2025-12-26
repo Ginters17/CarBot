@@ -11,7 +11,7 @@ def get_gcs_client():
         return storage.Client(credentials=credentials)
 
 # Download and return viewed listings from GCS as a set
-def load_viewed_listings(bucket_name, file_name="scraped_links.txt"):
+def load_viewed_listings(bucket_name, file_name="car_scraped_links.txt"):
     if(GCS_SERVICE_IMPL == "mock"):
         print("Mock GCS service used")
         return get_mock_listings()
@@ -34,7 +34,7 @@ def load_viewed_listings(bucket_name, file_name="scraped_links.txt"):
 # Save links to GCS with append or overwrite mode
 #   mode="a" -> append to existing links
 #   mode="w" -> overwrite all links
-def save_viewed_listings(new_links, bucket_name, file_name="scraped_links.txt", mode="a"):
+def save_viewed_listings(new_links, bucket_name, file_name="car_scraped_links.txt", mode="a"):
     if(GCS_SERVICE_IMPL == "mock"):
         return
     
@@ -57,14 +57,11 @@ def save_viewed_listings(new_links, bucket_name, file_name="scraped_links.txt", 
 
 def get_mock_listings():
     return {
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/hbxxg.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/bcikfh.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/dllxf.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/zolitude/ahbgg.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/imanta/fbhxd.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/bjnmm.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/bedcil.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/centre/bebpko.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/vecriga/bofjd.html",
-        "https://www.ss.com/msg/lv/real-estate/flats/riga/dreilini/cgcdmk.html"
+        "https://www.ss.com/msg/lv/transport/cars/audi/a6/gphim.html",
+        "https://www.ss.com/msg/lv/transport/cars/audi/a6/chojb.html",
+        "https://www.ss.com/msg/lv/transport/cars/audi/a6/aopok.html",
+        "https://www.ss.com/msg/lv/transport/cars/volkswagen/touran/bcxxnx.html",
+        "https://www.ss.com/msg/lv/transport/cars/volkswagen/touareg/bienfj.html",
+        "https://www.ss.com/msg/lv/transport/cars/bmw/x3/dhijh.html",
+        "https://www.ss.com/msg/lv/transport/cars/volkswagen/golf-4/bdfbhm.html"
     }

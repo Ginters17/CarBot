@@ -2,21 +2,23 @@ import os
 import requests
 import re
 from bs4 import BeautifulSoup
-from config.config_reader import SS_BASE_URL, SS_LISTINGS_URL
+from config.config_reader import SS_BASE_URL, SS_LISTINGS_URL, CAR_FILTER_MAX_PRICE, CAR_FILTER_MIN_PRICE, CAR_FILTER_MIN_YEAR, CAR_FILTER_TRANSMISSION
 from services.scraper_storage_service import load_viewed_listings, save_viewed_listings
 
-BUCKET_NAME = "realty-scraper"
-SCRAPED_LINKS_FILE = "scraped_links.txt"
+BUCKET_NAME = "ss-scraper"
+SCRAPED_LINKS_FILE = "car_scraped_links.txt"
 
-def getApartmentListings():
+def getCarListings():
     page_num = 1
     end_reached = False
     all_new_links = set()
 
+    session, headers = createScraperSession()
+
     while not end_reached:
         url = getPageUrl(page_num)
 
-        response = requests.get(url)
+        response = session.get(url, headers=headers)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -64,67 +66,61 @@ def enrichLink(link):
     soup = BeautifulSoup(response.text, "html.parser")
 
     price = extractPrice(soup)
-    rooms = extractRooms(soup)
-    size = extractSize(soup)
-    district = extractDistrict(soup)
     image_url = extractImageUrl(soup)
-    floor = extractFloor(soup)
-    hasDishWasher = extractHasDishWasher(soup)
-    hasRepair = extractHasRepair(soup)
-    hasFurniture = extractHasFurniture(soup)
-    hasStudioLayout = extractHasStudioLayout(soup)
+    make = extractMake(link)
+    model = extractModel(link)
+    year = extractYear(soup)
+    motor = extractMotor(soup)
+    transmission = extractTransmission(soup)
+    mileage = extractMileage(soup)
+    ta = extractTA(soup)
 
     return {
         "link": link,
         "price": price,
-        "rooms": rooms,
-        "size": size,
-        "district": district,
         "imageUrl": image_url,
-        "floor": floor,
-        "hasDishWasher": hasDishWasher,
-        "hasRepair": hasRepair,
-        "hasFurniture": hasFurniture,
-        "hasStudioLayout": hasStudioLayout
+        "make": make,
+        "model": model,
+        "year": year,
+        "motor": motor,
+        "transmission": transmission,
+        "mileage": mileage,
+        "ta": ta
     }
 
 def extractPrice(soup):
-    price_text = soup.select_one(".ads_price").text.strip().replace('\xa0', ' ')
-    match = re.search(r"(\d+)", price_text)
-    if match:
-        return int(match.group(1))
-    return None
+    el = soup.select_one("#tdo_8")
+    return el.get_text(strip=True) if el else None
 
-def extractRooms(soup):
-    rooms_cell = soup.select_one("#tdo_1")
-    if rooms_cell:
-        rooms_text = rooms_cell.text.strip()
-        try:
-            return int(rooms_text)
-        except ValueError:
-            return None
-    return None
+def extractMake(link):
+    match = re.search(r"/transport/cars/([^/]+)/([^/]+)/", link)
+    return match.group(1) if match else None
 
-def extractSize(soup):
-    area_cell = soup.select_one("#tdo_3")
-    if area_cell:
-        area_text = area_cell.text.strip()
-        match = re.search(r"(\d+)", area_text)
-        if match:
-            return int(match.group(1))
-    return None
+def extractModel(link):
+    match = re.search(r"/transport/cars/([^/]+)/([^/]+)/", link)
+    return match.group(2) if match else None
 
-def extractDistrict(soup):
-    rajons_cell = soup.select_one("#tdo_856")
-    if rajons_cell:
-        return rajons_cell.text.strip()
-    return None
+def extractYear(soup):
+    el = soup.select_one("#tdo_18")
+    return el.get_text(strip=True) if el else None
 
-def extractFloor(soup):
-    floor_cell = soup.select_one("#tdo_4")
-    if floor_cell:
-        return floor_cell.text.strip()
-    return None
+def extractMotor(soup):
+    el = soup.select_one("#tdo_15")
+    return el.get_text(strip=True) if el else None
+
+def extractTransmission(soup):
+    el = soup.select_one("#tdo_35")
+    return el.get_text(strip=True) if el else None
+
+def extractMileage(soup):
+    el = soup.select_one("#tdo_16")
+    if not el:
+        return None
+    return int(el.get_text(strip=True).replace(" ", ""))
+
+def extractTA(soup):
+    el = soup.select_one("#tdo_223")
+    return el.get_text(strip=True) if el else None
 
 def extractImageUrl(soup):    
     img_tag = soup.select_one("img.pic_thumbnail.isfoto")
@@ -135,43 +131,39 @@ def extractImageUrl(soup):
         return img_url
     return None
 
-def extractHasDishWasher(soup):
-    div = soup.find("div", id="msg_div_msg")
-    text = div.get_text().lower()
-    keywords = ["velas masina", "veļas mašīna", "veļasmašīna", "velasmasina"]
-
-    if any(keyword in text for keyword in keywords):
-        return True
-    else:
-        return False
+def createScraperSession():
+    session = requests.Session()
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.ss.com/lv/transport/cars/',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'lv,en;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
     
-def extractHasRepair(soup):
-    div = soup.find("div", id="msg_div_msg")
-    text = div.get_text().lower()
-    keywords = ["remont", "renov"]
-
-    if any(keyword in text for keyword in keywords):
-        return True
-    else:
-        return False
-
-def extractHasFurniture(soup):
-    div = soup.find("div", id="msg_div_msg")
-    text = div.get_text().lower()
-    keywords = ["mēbelēt", "mebelet"]
-
-    if any(keyword in text for keyword in keywords):
-        return True
-    else:
-        return False
+    # Visit the main page to establish session
+    session.get(SS_LISTINGS_URL, headers=headers)
     
-
-def extractHasStudioLayout(soup):
-    div = soup.find("div", id="msg_div_msg")
-    text = div.get_text().lower()
-    keywords = ["studio", "studij"]
-
-    if any(keyword in text for keyword in keywords):
-        return True
-    else:
-        return False
+    # Prepare search data
+    search_data = {
+        'topt[8][min]': CAR_FILTER_MIN_PRICE,   # Price min (field ID 8)
+        'topt[8][max]': CAR_FILTER_MAX_PRICE,   # Price max
+        'topt[18][min]': CAR_FILTER_MIN_YEAR,  # Year min (field ID 18)
+        'topt[18][max]': '',  # Year max
+        'topt[15][min]': '',  # Engine size min (field ID 15)
+        'topt[15][max]': '',  # Engine size max
+        'opt[34]': '',        # Make (field ID 34)
+        'opt[35]': CAR_FILTER_TRANSMISSION,        # Transmission (field ID 35)
+        'opt[32]': '',        # Body type (field ID 32)
+        'opt[17]': '',        # Fuel type (field ID 17)
+    }
+    
+    # Submit the filter form to create session state
+    session.post(
+        SS_LISTINGS_URL,
+        headers=headers,
+        data=search_data,
+        allow_redirects=True
+    )
+    
+    return session, headers

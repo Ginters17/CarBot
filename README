@@ -1,4 +1,4 @@
 This application (glorified script) is used to scrape ss.com and retrieve apartment listing matching some filters. Matching listings are then sent to user via telegram bot.
 
 To run locally:
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt

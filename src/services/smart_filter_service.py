@@ -1,28 +1,20 @@
-from config.config_reader import UNWANTED_DISTRICTS, LISTING_MIN_PRICE, LISTING_MAX_PRICE, LISTING_MIN_SIZE, LISTING_MAX_SIZE, LISTING_MIN_ROOMS, LISTING_MAX_ROOMS, LISTING_MIN_PRICE_PER_M2
+from config.config_reader import CAR_FILTER_MAKE, CAR_FILTER_MODEL
 
-# TODO - Add AI, add room filter
 def filterListings(listings):
     filteredListings = []
 
     for listing in listings:
-        # Area filter]
-        if any(unwanted in listing['link'] for unwanted in UNWANTED_DISTRICTS):
+        # Other fields validated in scraper service
+
+        # Make filter
+        model = listing.get('make')
+        if model not in CAR_FILTER_MAKE:
             continue
 
-        # Price filter
-        if not (LISTING_MIN_PRICE <= listing['price'] <= LISTING_MAX_PRICE):
-            continue
 
-        # Size filter
-        if not (LISTING_MIN_SIZE <= listing['size'] <= LISTING_MAX_SIZE):
-            continue
-
-        # Room filter
-        if not (LISTING_MIN_ROOMS <= listing['rooms'] <= LISTING_MAX_ROOMS):
-            continue
-
-        # Price per m2 filter
-        if (float(listing['price']) / float(listing['size']) < LISTING_MIN_PRICE_PER_M2):
+        # Model filter
+        model = listing.get('model')
+        if model not in CAR_FILTER_MODEL:
             continue
 
         # Passed all filters
