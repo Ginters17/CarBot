@@ -1,0 +1,42 @@
+name: Carbot Scraper
+
+# on:
+#   schedule:
+#     - cron: '0 * * * *'  # Every hour
+#   workflow_dispatch:
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_SERVICE_IMPL: ${{ vars.TELEGRAM_SERVICE_IMPL }}
+      SS_BASE_URL: ${{ vars.SS_BASE_URL }}
+      SS_LISTINGS_URL: ${{ vars.SS_LISTINGS_URL }}
+      CAR_FILTER_MAKE: ${{ vars.CAR_FILTER_MAKE }}
+      CAR_FILTER_MODEL: ${{ vars.CAR_FILTER_MODEL }}
+      CAR_FILTER_MAX_PRICE: ${{ vars.CAR_FILTER_MAX_PRICE }}
+      CAR_FILTER_MIN_PRICE: ${{ vars.CAR_FILTER_MIN_PRICE }}
+      CAR_FILTER_TRANSMISSION: ${{ vars.CAR_FILTER_TRANSMISSION }}
+      CAR_FILTER_MIN_YEAR: ${{ vars.CAR_FILTER_MIN_YEAR }}
+      GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      GCS_SERVICE_IMPL: ${{ vars.GCS_SERVICE_IMPL }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        run: python src/Carbot.py
